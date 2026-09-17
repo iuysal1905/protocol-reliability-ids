@@ -1,0 +1,9 @@
+# Pinned to the versions used for the reported results.
+numpy==1.26.4
+pandas==2.2.2
+scipy==1.13.1
+scikit-learn==1.5.1
+torch==2.3.1
+xgboost==2.0.3
+lightgbm==4.3.0
+shap==0.45.1

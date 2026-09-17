@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "If you use this code, please cite the accompanying article."
+title: "Protocol-dependent reliability of IoT intrusion detection"
+authors:
+  - family-names: "uysal"
+    given-names: "ilhan"
+    orcid: "https://orcid.org/0000-0002-6091-9110"
+version: "1.0.0"
+date-released: "2026-09-15"
+license: MIT
