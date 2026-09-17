@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22809104.svg)](https://doi.org/10.5281/zenodo.22809104)
+
 # Protocol-dependent reliability of IoT intrusion detection
 
 Code accompanying the manuscript on evaluation-protocol dependence in IoT
