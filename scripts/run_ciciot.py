@@ -48,9 +48,15 @@ LABEL_COLUMN = "label"
 BUDGETS = [5, 10, 15, 20, 30, 40]
 BUDGET_SEEDS = [11, 22, 33, 42, 55]
 PROFILE_SEEDS = [11, 22, 33, 42, 55, 66, 77, 88, 99, 111]
-EPOCHS = 12
-PATIENCE = 4
 BATCH_SIZE = 4096
+
+# Training schedules, matching the reported analysis:
+#   the full-feature reference network that is explained    20 epochs, patience 5
+#   feature budgets and the selected-profile seed runs       12 epochs, patience 4
+#   leave-one-family-out folds                               10 epochs, patience 3
+REFERENCE_SCHEDULE = (20, 5)
+BUDGET_SCHEDULE = (12, 4)
+LOFO_SCHEDULE = (10, 3)
 
 
 # ---------------------------------------------------------------------
@@ -123,7 +129,7 @@ def predict(model, loader):
     return np.concatenate(probabilities)
 
 
-def fit_mlp(data, columns, seed):
+def fit_mlp(data, columns, seed, schedule=BUDGET_SCHEDULE):
     """Train one network on the given column subset and return probabilities."""
     set_seed(seed)
 
@@ -147,10 +153,11 @@ def fit_mlp(data, columns, seed):
     )
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-4)
 
+    epochs, patience = schedule
     best_state, best_auc, wait = None, -np.inf, 0
     started = time.time()
 
-    for _ in range(EPOCHS):
+    for _ in range(epochs):
         model.train()
         for xb, yb in train_loader:
             optimizer.zero_grad()
@@ -166,13 +173,15 @@ def fit_mlp(data, columns, seed):
             best_auc, best_state, wait = auc, copy.deepcopy(model.state_dict()), 0
         else:
             wait += 1
-            if wait >= PATIENCE:
+            if wait >= patience:
                 break
 
     if best_state is not None:
         model.load_state_dict(best_state)
 
+    model.eval()
     return {
+        "model": model,
         "val_probability": predict(model, val_loader),
         "test_probability": predict(model, test_loader),
         "training_time_sec": time.time() - started,
@@ -205,10 +214,12 @@ def shap_ranking(data, out_dir):
     explain = np.concatenate(explain)
     assert len(np.intersect1d(background, explain)) == 0
 
-    fitted = fit_mlp(data, data["features"], GLOBAL_SEED)  # noqa: F841
-    set_seed(GLOBAL_SEED)
-
-    model = TabularMLP(input_dim=len(data["features"]))
+    # Explain the trained full-feature reference network. It is fitted with
+    # the reference schedule so that it matches the network in Table IV.
+    fitted = fit_mlp(
+        data, data["features"], GLOBAL_SEED, schedule=REFERENCE_SCHEDULE
+    )
+    model = fitted["model"]
     model.eval()
 
     wrapper = nn.Sequential(model, nn.Sigmoid())
@@ -389,7 +400,9 @@ def leave_one_family_out(train_df, val_df, test_df, out_dir):
             "X_test": X_te, "y_test": test_df["y_binary"].to_numpy(np.int64),
         }
 
-        fitted = fit_mlp(fold_data, columns, GLOBAL_SEED + len(family))
+        fitted = fit_mlp(
+            fold_data, columns, GLOBAL_SEED + len(family), schedule=LOFO_SCHEDULE
+        )
         probability = fitted["test_probability"]
 
         test_family = family_of(test_df)
