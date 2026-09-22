@@ -140,6 +140,10 @@ def search_outer_splits(
 ) -> tuple[list[dict], list[tuple[np.ndarray, np.ndarray]]]:
     """Find endpoint-pair-disjoint outer partitions with usable class counts.
 
+    A random state is accepted when both the outer training and the outer test
+    partition hold at least the minimum number of benign and attack records,
+    and when its test-group set differs from every set already accepted.
+
     Returns one record and one index pair per accepted partition. The search is
     deterministic, so the accepted random states are a property of the dataset
     and the thresholds rather than of the run.
@@ -148,6 +152,7 @@ def search_outer_splits(
 
     records: list[dict] = []
     index_pairs: list[tuple[np.ndarray, np.ndarray]] = []
+    seen_test_sets: set = set()
 
     for state in range(max_states):
         splitter = GroupShuffleSplit(
@@ -165,8 +170,15 @@ def search_outer_splits(
 
         if test_benign < min_test_benign or test_attack < min_test_attack:
             continue
-        if train_benign == 0 or train_attack == 0:
+        if train_benign < min_test_benign or train_attack < min_test_attack:
             continue
+
+        # A random state that reproduces an already accepted test-group set
+        # adds no new partition and is skipped, as in the reported analysis.
+        test_key = tuple(sorted(pd.unique(endpoint_groups[test_index])))
+        if test_key in seen_test_sets:
+            continue
+        seen_test_sets.add(test_key)
 
         records.append({
             "split_id": len(records) + 1,
