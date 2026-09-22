@@ -1,5 +1,3 @@
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22809104.svg)](https://doi.org/10.5281/zenodo.22809104)
-
 # Protocol-dependent reliability of IoT intrusion detection
 
 Code accompanying the manuscript on evaluation-protocol dependence in IoT
@@ -12,15 +10,15 @@ matched control arms and a feature ablation.
 
 ## What this repository reproduces
 
-| Produced by |
+| Manuscript item | Produced by |
 |---|---|
-| feature budgets | `scripts/run_ciciot.py`, stage 3 |
-| seed stability | `scripts/run_ciciot.py`, stage 4 |
-| leave-one-family-out | `scripts/run_ciciot.py`, stage 5 |
-| cross-protocol comparison | `scripts/run_edge.py`, stages 3 and 4 |
-| matched controls | `scripts/run_edge.py`, stage 5 |
-| transport-identity ablation | `scripts/run_edge.py`, stage 6 |
-| F group statistics | `scripts/run_edge.py`, stage 7 |
+| Table V, feature budgets | `scripts/run_ciciot.py`, stage 3 |
+| Table VI, seed stability | `scripts/run_ciciot.py`, stage 4 |
+| Table IX, leave-one-family-out | `scripts/run_ciciot.py`, stage 5 |
+| Table X, cross-protocol comparison | `scripts/run_edge.py`, stages 3 and 4 |
+| Table XI, matched controls | `scripts/run_edge.py`, stage 5 |
+| Table XII, transport-identity ablation | `scripts/run_edge.py`, stage 6 |
+| Section III-F group statistics | `scripts/run_edge.py`, stage 7 |
 | Split manifests | `scripts/run_edge.py`, stage 7 |
 | Effect sizes and loss decomposition | `scripts/analyze_edge.py` |
 
@@ -44,7 +42,7 @@ source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-Python 3.10 or later. Everything runs on CPU; no GPU is required. A full Edge
+The reported results were produced with Python 3.13.9 and the library versions pinned in `requirements.txt`. Everything runs on CPU; no GPU is required. A full Edge
 run takes a few hours on a laptop, dominated by the ten endpoint partitions
 and the two control arms.
 
@@ -91,8 +89,9 @@ device inventory, so a group is a communication relationship between two
 addresses, not a verified physical device.
 
 **Outer-split search.** Random states are tried in ascending order from zero
-and the first ten that put at least 500 benign and 500 attack records in the
-outer test partition are accepted. The search is deterministic, so the accepted
+and the first ten that put at least 500 benign and 500 attack records in both
+the outer training and the outer test partition, with a test-group set not
+already accepted, are kept. The search is deterministic, so the accepted
 states are a property of the dataset and the thresholds. On the released file
 they are 3, 6, 10, 16, 18, 19, 21, 22, 25 and 27.
 
@@ -108,6 +107,13 @@ whose mean lies within one pooled within-budget standard deviation of the best
 mean. The test partition is read once, for the selected budget. Test metrics
 for the other budgets are written to `budget_test_posthoc.csv` and are
 reported in the manuscript as post-hoc.
+
+**Training schedules.** The explained full-feature reference network uses at
+most 20 epochs with patience 5, as in the baseline comparison. The feature
+budgets and the ten-seed runs of the selected profile use at most 12 epochs
+with patience 4. Leave-one-family-out folds use at most 10 epochs with
+patience 3. Early stopping selects the checkpoint by validation ROC-AUC in all
+three.
 
 **Leave-one-family-out.** The median fill and the standardization are refitted
 after the held-out family is removed, so no statistic from that family enters
@@ -140,6 +146,17 @@ scripts/run_ciciot.py
 scripts/run_edge.py
 scripts/analyze_edge.py
 ```
+
+## Changelog
+
+**v1.0.1** — `run_ciciot.py` now explains the trained reference network; v1.0.0
+explained a freshly initialized network in the attribution stage. Training
+schedules for the reference network and the leave-one-family-out folds now
+match the reported analysis. The outer-split search now also requires 500
+benign and 500 attack records on the training side and skips repeated
+test-group sets, as the reported analysis did. `requirements.txt` now pins the
+versions listed in the manuscript. Results in the manuscript were produced by the
+original notebook and are unaffected.
 
 ## License
 
