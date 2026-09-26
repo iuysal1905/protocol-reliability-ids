@@ -1,4 +1,4 @@
-# Protocol-dependent reliability of IoT intrusion detection
+# Characterizing and Partly Reducing the Endpoint-Pair-Disjoint Evaluation Gap
 
 Code accompanying the manuscript on evaluation-protocol dependence in IoT
 intrusion detection, covering CICIoT2023 and Edge-IIoTset.
