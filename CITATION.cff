@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 message: "If you use this code, please cite the accompanying article."
-title: "Protocol-dependent reliability of IoT intrusion detection"
+title: "Characterizing and Partly Reducing the Endpoint-Pair-Disjoint Evaluation Gap"
 authors:
   - family-names: "uysal"
     given-names: "ilhan"
