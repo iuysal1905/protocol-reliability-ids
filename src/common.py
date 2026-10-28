@@ -13,6 +13,7 @@ import random
 import time
 
 import numpy as np
+import pandas as pd
 import torch
 import torch.nn as nn
 
@@ -32,6 +33,14 @@ from sklearn.metrics import (
 from torch.utils.data import DataLoader, TensorDataset
 
 DEVICE = "cpu"
+
+# Edge-IIoTset settings recovered from the original executed
+# edge_repeated_endpoint_stress_v2.py (20 epochs / patience 5).
+MLP_EPOCHS = 20
+MLP_PATIENCE = 5
+MLP_BATCH_SIZE = 4096
+MLP_LR = 1e-3
+MLP_WEIGHT_DECAY = 1e-4
 
 def set_seed(seed: int) -> None:
     random.seed(seed)

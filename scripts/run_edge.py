@@ -287,20 +287,21 @@ def main() -> int:
     with open(out_dir / "group_statistics.json", "w", encoding="utf-8") as handle:
         json.dump(stats, handle, indent=2)
 
-    manifest = pd.concat([
-        pd.DataFrame({
+    # Both assignments are exported, matching the published full pair manifest.
+    all_groups = np.unique(groups)
+    manifest_chunks = []
+    for record, (_, test_idx) in zip(records, index_pairs):
+        held_out = set(np.unique(groups[test_idx]))
+        manifest_chunks.append(pd.DataFrame({
             "split_id": record["split_id"],
-            "endpoint_group": np.unique(groups[test_idx]),
-            "assignment": "outer_test",
-        })
-        for record, (_, test_idx) in zip(records, index_pairs)
-    ], ignore_index=True)
-
-    manifest.to_csv(
-        out_dir / "outer_split_manifest.csv.gz", index=False, compression="gzip"
-    )
-    print(f"  manifest rows: {len(manifest)} (test side; training side is the "
-          "complement)")
+            "endpoint_group": all_groups,
+            "assignment": ["outer_test" if g in held_out else "outer_train"
+                           for g in all_groups],
+        }))
+    manifest = pd.concat(manifest_chunks, ignore_index=True)
+    manifest.to_csv(out_dir / "outer_split_manifest.csv.gz", index=False,
+                    compression="gzip")
+    print(f"  full pair manifest rows: {len(manifest)}")
 
     print(f"\nDone. Results in {out_dir.resolve()}")
     return 0

@@ -49,8 +49,8 @@ DROP_COLUMNS = [
 ]
 
 #: Transport addressing and session-state fields withdrawn in the NO_ID arm of
-#: the ablation. The selection is semantic: these variables record which
-#: conversation a packet belongs to rather than how the traffic behaves.
+#: the ablation. The selection is semantic: these fields encode transport
+#: addressing or session-specific state that can be tied to a conversation.
 TRANSPORT_IDENTITY_FIELDS = [
     "tcp.srcport",
     "tcp.dstport",
@@ -60,7 +60,6 @@ TRANSPORT_IDENTITY_FIELDS = [
     "tcp.ack",
     "tcp.ack_raw",
     "tcp.checksum",
-    "tcp.stream",
 ]
 
 
@@ -209,9 +208,9 @@ def search_outer_splits(
 def make_placebo_groups(real_groups: np.ndarray, seed: int) -> np.ndarray:
     """Randomize group membership while preserving the group-size multiset.
 
-    The splitter then faces an identically skewed grouping problem in which the
-    groups no longer correspond to communication relationships, which is what
-    separates the partitioning mechanism from endpoint structure.
+    The splitter faces the same group-size distribution, but group identity
+    no longer tracks real communication relationships. This is one matched
+    control, not a complete causal separation of all shifting properties.
     """
     rng = np.random.default_rng(seed)
 

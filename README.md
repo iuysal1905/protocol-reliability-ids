@@ -1,11 +1,11 @@
-# Characterizing and Partly Reducing the Endpoint-Pair-Disjoint Evaluation Gap
+# Protocol-dependent reliability of IoT intrusion detection
 
 Code accompanying the manuscript on evaluation-protocol dependence in IoT
 intrusion detection, covering CICIoT2023 and Edge-IIoTset.
 
 The study does not propose a detection model. It measures how much of the
 performance reported under conventional row-level evaluation survives when the
-test boundary is drawn differently, and attributes the difference through two
+test boundary is drawn differently, and examines plausible contributors using two
 matched control arms and a feature ablation.
 
 ## What this repository reproduces
@@ -42,7 +42,7 @@ source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-The reported results were produced with Python 3.13.9 and the library versions pinned in `requirements.txt`. Everything runs on CPU; no GPU is required. A full Edge
+The reported results were produced with Python 3.13.9 and the principal library versions listed in `requirements.txt` (SciPy is not version-pinned). Everything runs on CPU; no GPU is required. A full Edge
 run takes a few hours on a laptop, dominated by the ten endpoint partitions
 and the two control arms.
 
@@ -104,9 +104,9 @@ and applied to the validation and test rows, separately within each partition.
 explanation samples drawn disjointly. Feature budgets are compared on the
 validation partition across five seeds; the selected budget is the smallest
 whose mean lies within one pooled within-budget standard deviation of the best
-mean. The test partition is read once, for the selected budget. Test metrics
-for the other budgets are written to `budget_test_posthoc.csv` and are
-reported in the manuscript as post-hoc.
+mean. The test partition is excluded from ranking and budget selection. After the
+budget is chosen on validation rows, the test metrics of all budgets are
+written to `budget_test_posthoc.csv` as a post-selection diagnostic.
 
 **Training schedules.** The explained full-feature reference network uses at
 most 20 epochs with patience 5, as in the baseline comparison. The feature
@@ -145,9 +145,45 @@ src/edge_runner.py   one function that fits and scores one partition
 scripts/run_ciciot.py
 scripts/run_edge.py
 scripts/analyze_edge.py
+scripts/verify_release.py
+results/published_endpoint_stress_v2/   original saved stress outputs
+results/reproducibility/                group/row manifests and configuration
 ```
 
+## Zenodo release contents and provenance
+
+The ZIP contains **actual stored results** from the original endpoint-pair-
+disjoint stress experiment and the later reproducibility notebook, in addition
+to scripts. See `results/README.md` for precise provenance, distinctions
+between legacy result metadata and the final Table C.VII, and what was **not**
+provided in the source uploads. The raw datasets are not redistributed.
+
+The full pair-group manifest (`outer_split_manifest.csv`) contains both train
+and test assignments for all ten partitions; the row manifest contains the
+post-deduplication source-row indices. Neither is a standalone training dataset.
+
+For a quick check of the published files without datasets or training, run:
+
+```bash
+python scripts/verify_release.py
+python tests/test_smoke.py
+```
+
+A full model rerun still requires the original datasets. Historical endpoint
+stress results were not substituted for independent matched-control or ablation
+outputs. Those arms must be rerun from source data if their detailed CSVs are
+needed.
+
 ## Changelog
+
+**v1.1.0 (Zenodo revised archive, 2026-10-28)** — included published
+endpoint-group and row manifests, source-produced group-composition tables,
+original stress metrics, and the final Table C.VII partition composition;
+restored verified Edge MLP hyperparameters (20 epochs, patience 5), fixed
+missing pandas import, corrected CICIoT2023 `BenignTraffic` encoding and
+seven-family grouping, and kept test budget diagnostics post-selection. The
+transport-identity list is now the eight fields in the manuscript. Existing
+experimental results have not been regenerated or overwritten.
 
 **v1.0.1** — `run_ciciot.py` now explains the trained reference network; v1.0.0
 explained a freshly initialized network in the attribution stage. Training
@@ -162,3 +198,8 @@ original notebook and are unaffected.
 
 MIT, see `LICENSE`. The datasets carry their own terms; consult the original
 providers.
+
+## Archived release
+
+Zenodo v1.1.0:
+https://doi.org/10.5281/zenodo.23741237

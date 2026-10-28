@@ -13,9 +13,9 @@ Stage 2 and stage 3 are the corrected versions. In the first submission the
 SHAP explanation sample was drawn from the test partition and the budgets were
 compared on test metrics, so the profile that reached the manuscript had been
 chosen with the evaluation partition in view. Here the ranking uses training
-rows, the selection uses validation rows, and the test partition is read once,
-for the selected budget. Test metrics for the other budgets are written to a
-separate file and are reported as post-hoc.
+rows and the selection uses validation rows. Once budget selection is complete,
+test metrics for all budgets are recorded as a separate post-selection audit;
+these test metrics have no role in ranking or budget selection.
 
 Stage 5 refits the median fill and the standardization after the held-out
 family is removed, so no statistic from that family enters the preprocessing.
@@ -65,9 +65,9 @@ LOFO_SCHEDULE = (10, 3)
 
 def load_split(path, label_column=LABEL_COLUMN, max_rows=None):
     frame = pd.read_csv(path, nrows=max_rows, low_memory=False)
-    frame["y_binary"] = (
-        frame[label_column].astype(str).str.lower() != "benign"
-    ).astype(np.int64)
+    normalized = frame[label_column].astype(str).str.strip().str.casefold()
+    benign = {"benign", "benigntraffic"}
+    frame["y_binary"] = (~normalized.isin(benign)).astype(np.int64)
     return frame
 
 
@@ -129,7 +129,8 @@ def predict(model, loader):
     return np.concatenate(probabilities)
 
 
-def fit_mlp(data, columns, seed, schedule=BUDGET_SCHEDULE):
+def fit_mlp(data, columns, seed, schedule=BUDGET_SCHEDULE,
+            evaluate_test=True):
     """Train one network on the given column subset and return probabilities."""
     set_seed(seed)
 
@@ -183,7 +184,7 @@ def fit_mlp(data, columns, seed, schedule=BUDGET_SCHEDULE):
     return {
         "model": model,
         "val_probability": predict(model, val_loader),
-        "test_probability": predict(model, test_loader),
+        "test_probability": predict(model, test_loader) if evaluate_test else None,
         "training_time_sec": time.time() - started,
     }
 
@@ -263,6 +264,7 @@ def shap_ranking(data, out_dir):
 def select_budget(data, ranked, out_dir):
     """Choose the budget on validation, with the rule in units of seed noise."""
     validation_rows, test_rows = [], []
+    post_selection_models = []
 
     for k in BUDGETS:
         if k > len(ranked):
@@ -271,16 +273,15 @@ def select_budget(data, ranked, out_dir):
         print(f"  budget top-{k}")
 
         for seed in BUDGET_SEEDS:
-            fitted = fit_mlp(data, columns, seed)
+            fitted = fit_mlp(data, columns, seed, evaluate_test=False)
 
             val = evaluate_binary(data["y_val"], fitted["val_probability"])
-            test = evaluate_binary(data["y_test"], fitted["test_probability"])
-
             validation_rows.append({"n_features": k, "seed": seed, **val})
-            test_rows.append({"n_features": k, "seed": seed, **test})
+            # Hold the fitted model for post-selection audit; no test metrics
+            # are inspected or computed before choosing the budget.
+            post_selection_models.append((k, seed, fitted["model"]))
 
     validation_df = pd.DataFrame(validation_rows)
-    test_df = pd.DataFrame(test_rows)
 
     summary = (
         validation_df.groupby("n_features")["balanced_accuracy"]
@@ -298,6 +299,21 @@ def select_budget(data, ranked, out_dir):
     print(f"  budgets inside the band : {sorted(inside['n_features'])}")
     print(f"  selected                : top-{selected}")
 
+    # This loop runs only after the selected budget has been decided from
+    # validation metrics; the per-budget test summary is a post-hoc audit.
+    from torch.utils.data import DataLoader, TensorDataset
+    for k, seed, trained_model in post_selection_models:
+        columns = ranked[:k]
+        indices = [data["features"].index(c) for c in columns]
+        X_test = data["X_test"][:, indices]
+        loader = DataLoader(TensorDataset(
+            torch.tensor(X_test, dtype=torch.float32),
+            torch.zeros((len(X_test), 1), dtype=torch.float32)
+        ), batch_size=BATCH_SIZE, shuffle=False)
+        test_prob = predict(trained_model, loader)
+        test = evaluate_binary(data["y_test"], test_prob)
+        test_rows.append({"n_features": k, "seed": seed, **test})
+    test_df = pd.DataFrame(test_rows)
     validation_df.to_csv(out_dir / "budget_validation.csv", index=False)
     test_df.to_csv(out_dir / "budget_test_posthoc.csv", index=False)
     summary.to_csv(out_dir / "budget_summary.csv", index=False)
@@ -349,17 +365,41 @@ def seed_stability(data, columns, out_dir):
     return frame
 
 
+
+def label_to_family(label):
+    """Map original CICIoT2023 labels to manuscript Table III families."""
+    name = str(label).strip()
+    key = name.casefold()
+    if key in {"benign", "benigntraffic"}:
+        return "Benign"
+    if key.startswith("ddos-"):
+        return "DDoS"
+    if key.startswith("dos-"):
+        return "DoS"
+    if key.startswith("mirai-"):
+        return "Mirai"
+    if key.startswith("recon-") or key == "vulnerabilityscan":
+        return "Recon"
+    if key in {"dns_spoofing", "mitm-arpspoofing"}:
+        return "Spoofing"
+    if key == "dictionarybruteforce":
+        return "BruteForce"
+    if key in {"browserhijacking", "backdoor_malware", "commandinjection",
+               "sqlinjection", "uploading_attack", "xss"}:
+        return "WebBased"
+    raise ValueError(f"Unrecognized CICIoT2023 attack label: {name!r}")
+
 def leave_one_family_out(train_df, val_df, test_df, out_dir):
     """Retrain per family, refitting preprocessing after the family is removed."""
     from sklearn.metrics import confusion_matrix
     from sklearn.preprocessing import StandardScaler
 
     def family_of(frame):
-        return frame[LABEL_COLUMN].astype(str)
+        return frame[LABEL_COLUMN].map(label_to_family)
 
     families = sorted(
         f for f in family_of(train_df).unique()
-        if f.lower() not in ("benign", "other")
+        if f != "Benign"
     )
     print(f"  families: {families}")
 
@@ -407,7 +447,7 @@ def leave_one_family_out(train_df, val_df, test_df, out_dir):
 
         test_family = family_of(test_df)
         held = np.flatnonzero(test_family == family)
-        benign = np.flatnonzero(test_family.str.lower() == "benign")
+        benign = np.flatnonzero(test_family == "Benign")
 
         for name, index in [
             ("heldout_family_only", held),

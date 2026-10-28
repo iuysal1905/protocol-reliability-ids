@@ -1,10 +1,11 @@
 cff-version: 1.2.0
 message: "If you use this code, please cite the accompanying article."
-title: "Characterizing and Partly Reducing the Endpoint-Pair-Disjoint Evaluation Gap"
+title: "Protocol-dependent reliability of IoT intrusion detection"
 authors:
   - family-names: "uysal"
     given-names: "ilhan"
     orcid: "https://orcid.org/0000-0002-6091-9110"
-version: "1.0.0"
-date-released: "2026-09-15"
+version: "1.1.0"
+date-released: "2026-10-28"
 license: MIT
+doi: 10.5281/zenodo.23741237
