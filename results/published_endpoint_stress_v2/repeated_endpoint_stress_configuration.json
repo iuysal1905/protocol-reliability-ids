@@ -1,0 +1,18 @@
+{
+  "dataset": "Edge-IIoTset",
+  "evaluation": "Repeated endpoint-pair-disjoint robustness stress test",
+  "group_definition": "Canonical undirected ip.src_host <-> ip.dst_host",
+  "outer_splits": 10,
+  "outer_test_size": 0.15,
+  "outer_split_selection": "First feasible splits from a fixed sequence of random states; no model performance was used for selection.",
+  "inner_validation": "Stratified row-level validation drawn only from the outer-training partition and used solely for MLP early stopping. The outer test remains strictly endpoint-pair-disjoint.",
+  "threshold": 0.5,
+  "device": "cpu",
+  "models": [
+    "Always attack baseline",
+    "Tabular MLP",
+    "Random Forest",
+    "XGBoost",
+    "LightGBM"
+  ]
+}

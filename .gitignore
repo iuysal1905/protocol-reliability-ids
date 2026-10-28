@@ -5,3 +5,6 @@ data/
 results/*/
 !results/.gitkeep
 .ipynb_checkpoints/
+
+!results/reproducibility/
+!results/published_endpoint_stress_v2/

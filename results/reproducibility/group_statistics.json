@@ -1,0 +1,133 @@
+{
+  "description": "Aggregate endpoint-pair structure and manifest integrity checks for Edge-IIoTset; derived directly from the accompanying CSV outputs.",
+  "dataset": {
+    "name": "Edge-IIoTset",
+    "records_after_deduplication": 156986,
+    "benign_records": 24301,
+    "attack_records": 132685
+  },
+  "grouping": {
+    "source_field": "ip.src_host",
+    "destination_field": "ip.dst_host",
+    "canonicalization": "The two identifiers are sorted lexicographically and joined with ' <-> ', so that A to B and B to A form one group.",
+    "total_unique_pairs": 25723,
+    "min_group_size": 1,
+    "max_group_size": 89976,
+    "mean_group_size": 6.1029428915756325,
+    "group_size_quantiles": {
+      "p25": 1,
+      "median": 1,
+      "p75": 1,
+      "p95": 1,
+      "p99": 1
+    },
+    "singleton_pairs": 25664,
+    "largest_pair_record_share_pct": 57.314665002,
+    "top_10_pairs_record_share_pct": 83.5685984737,
+    "top_100_pairs_record_share_pct": 83.6781623839,
+    "attack_only_pairs": 25711,
+    "benign_only_pairs": 8,
+    "mixed_class_pairs": 4
+  },
+  "outer_partitions": [
+    {
+      "split_id": 1,
+      "train_pairs": 21864,
+      "test_pairs": 3859,
+      "train_records": 133048,
+      "test_records": 23938,
+      "shared_pairs": 0
+    },
+    {
+      "split_id": 2,
+      "train_pairs": 21864,
+      "test_pairs": 3859,
+      "train_records": 132916,
+      "test_records": 24070,
+      "shared_pairs": 0
+    },
+    {
+      "split_id": 3,
+      "train_pairs": 21864,
+      "test_pairs": 3859,
+      "train_records": 145963,
+      "test_records": 11023,
+      "shared_pairs": 0
+    },
+    {
+      "split_id": 4,
+      "train_pairs": 21864,
+      "test_pairs": 3859,
+      "train_records": 145958,
+      "test_records": 11028,
+      "shared_pairs": 0
+    },
+    {
+      "split_id": 5,
+      "train_pairs": 21864,
+      "test_pairs": 3859,
+      "train_records": 133023,
+      "test_records": 23963,
+      "shared_pairs": 0
+    },
+    {
+      "split_id": 6,
+      "train_pairs": 21864,
+      "test_pairs": 3859,
+      "train_records": 132835,
+      "test_records": 24151,
+      "shared_pairs": 0
+    },
+    {
+      "split_id": 7,
+      "train_pairs": 21864,
+      "test_pairs": 3859,
+      "train_records": 146006,
+      "test_records": 10980,
+      "shared_pairs": 0
+    },
+    {
+      "split_id": 8,
+      "train_pairs": 21864,
+      "test_pairs": 3859,
+      "train_records": 132663,
+      "test_records": 24323,
+      "shared_pairs": 0
+    },
+    {
+      "split_id": 9,
+      "train_pairs": 21864,
+      "test_pairs": 3859,
+      "train_records": 132487,
+      "test_records": 24499,
+      "shared_pairs": 0
+    },
+    {
+      "split_id": 10,
+      "train_pairs": 21864,
+      "test_pairs": 3859,
+      "train_records": 132497,
+      "test_records": 24489,
+      "shared_pairs": 0
+    }
+  ],
+  "validation": {
+    "group_size_rows_match_group_composition_rows": true,
+    "all_group_record_counts_agree": true,
+    "group_ids_match_pair_manifest": true,
+    "ten_partitions_cover_all_group_ids": true,
+    "ten_partitions_cover_all_record_indices": true,
+    "no_duplicate_group_assignments_within_partitions": true,
+    "no_duplicate_record_assignments_within_partitions": true,
+    "group_and_row_manifest_class_distribution_not_independently_checked": true,
+    "note": "Shared-pair count is zero by group-level assignment design. Row-to-group correspondence cannot be checked without original raw-record endpoint identifiers."
+  },
+  "derived_from": [
+    "endpoint_group_sizes.csv",
+    "endpoint_group_class_composition.csv",
+    "outer_split_manifest.csv",
+    "outer_split_row_manifest.csv.gz",
+    "edge_configuration.json"
+  ],
+  "interpretation_note": "This aggregate JSON was reconstructed from provided source outputs; it is not an original output of the research notebook. For individual group sizes, class composition and split membership, use the source CSV manifests."
+}
